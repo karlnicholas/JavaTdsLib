@@ -1,11 +1,43 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
 package com.microsoft.data.tools.tdslib.payloads.login7.auth;
 
+/**
+ * Active Directory Authentication Library (ADAL) workflow.
+ */
 public enum ADALWorkflow {
-    UserPass(0x01), Integrated(0x02);
+
+    /**
+     * Username and password.
+     */
+    USER_PASS(0x01),
+
+    /**
+     * Integrated.
+     */
+    INTEGRATED(0x02);
+
     private final int value;
-    ADALWorkflow(int value) { this.value = value; }
-    public int value() { return value; }
+
+    ADALWorkflow(int value) {
+        this.value = value;
+    }
+
+    /**
+     * Gets the byte value of the workflow.
+     * @return The workflow ID.
+     */
+    public int getValue() {
+        return value;
+    }
+
+    /**
+     * Helper to get Enum from value.
+     */
+    public static ADALWorkflow fromValue(int value) {
+        for (ADALWorkflow w : values()) {
+            if (w.value == value) {
+                return w;
+            }
+        }
+        throw new IllegalArgumentException("Unknown ADALWorkflow value: " + value);
+    }
 }

@@ -1,40 +1,125 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
 package com.microsoft.data.tools.tdslib.payloads.login7;
 
+/**
+ * Type flags.
+ * Handles bit-masking for SQL Type, OLE DB, and Access Intent.
+ */
 public final class TypeFlags {
-    public enum OptionSqlType { Default, TSQL }
-    public enum OptionOleDb { Off, On }
-    public enum OptionAccessIntent { ReadWrite, ReadOnly }
 
-    private static final int OptionSqlTypeBitIndex = 0x08;
-    private static final int OptionOleDbBitIndex = 0x10;
-    private static final int OptionAccesIntentBitIndex = 0x20;
+    // Bit Masks
+    private static final int OPTION_SQL_TYPE_BIT_INDEX = 0x08;
+    private static final int OPTION_OLE_DB_BIT_INDEX = 0x10;
+    private static final int OPTION_ACCESS_INTENT_BIT_INDEX = 0x20;
 
-    private byte value;
+    // Use int internally to avoid signed byte issues
+    private int value;
 
-    public TypeFlags(byte value) { this.value = value; }
-    public TypeFlags() { setSqlType(OptionSqlType.Default); setOleDb(OptionOleDb.Off); setAccessIntent(OptionAccessIntent.ReadWrite); }
+    // --- Enums ---
 
-    public byte getValue() { return value; }
+    /**
+     * SQL interface type.
+     */
+    public enum OptionSqlType {
+        DEFAULT,
+        TSQL
+    }
 
-    public OptionSqlType getSqlType() { return (value & OptionSqlTypeBitIndex) == OptionSqlTypeBitIndex ? OptionSqlType.TSQL : OptionSqlType.Default; }
-    public void setSqlType(OptionSqlType v) { if (v == OptionSqlType.Default) value &= (byte)(255 - OptionSqlTypeBitIndex); else value |= OptionSqlTypeBitIndex; }
+    /**
+     * OLE DB.
+     */
+    public enum OptionOleDb {
+        OFF,
+        ON
+    }
 
-    public OptionOleDb getOleDb() { return (value & OptionOleDbBitIndex) == OptionOleDbBitIndex ? OptionOleDb.On : OptionOleDb.Off; }
-    public void setOleDb(OptionOleDb v) { if (v == OptionOleDb.Off) value &= (byte)(255 - OptionOleDbBitIndex); else value |= OptionOleDbBitIndex; }
+    /**
+     * Access intent.
+     */
+    public enum OptionAccessIntent {
+        READ_WRITE,
+        READ_ONLY
+    }
 
-    public OptionAccessIntent getAccessIntent() { return (value & OptionAccesIntentBitIndex) == OptionAccesIntentBitIndex ? OptionAccessIntent.ReadOnly : OptionAccessIntent.ReadWrite; }
-    public void setAccessIntent(OptionAccessIntent v) { if (v == OptionAccessIntent.ReadWrite) value &= (byte)(255 - OptionAccesIntentBitIndex); else value |= OptionAccesIntentBitIndex; }
+    // --- Constructors ---
 
-    public byte toByte() { return value; }
+    /**
+     * Create a new instance with default values.
+     */
+    public TypeFlags() {
+        this.value = 0;
+        setSqlType(OptionSqlType.DEFAULT);
+        setOleDb(OptionOleDb.OFF);
+        setAccessIntent(OptionAccessIntent.READ_WRITE);
+    }
 
-    public static TypeFlags fromByte(byte b) { return new TypeFlags(b); }
+    /**
+     * Create a new instance from a raw byte value.
+     */
+    public TypeFlags(byte value) {
+        this.value = value & 0xFF;
+    }
+
+    // --- Properties ---
+
+    public byte getValue() {
+        return (byte) value;
+    }
+
+    public byte byteValue() {
+        return (byte) value;
+    }
+
+    public OptionSqlType getSqlType() {
+        if ((value & OPTION_SQL_TYPE_BIT_INDEX) == OPTION_SQL_TYPE_BIT_INDEX) {
+            return OptionSqlType.TSQL;
+        }
+        return OptionSqlType.DEFAULT;
+    }
+
+    public void setSqlType(OptionSqlType sqlType) {
+        if (sqlType == OptionSqlType.DEFAULT) {
+            value &= ~OPTION_SQL_TYPE_BIT_INDEX;
+        } else {
+            value |= OPTION_SQL_TYPE_BIT_INDEX;
+        }
+    }
+
+    public OptionOleDb getOleDb() {
+        if ((value & OPTION_OLE_DB_BIT_INDEX) == OPTION_OLE_DB_BIT_INDEX) {
+            return OptionOleDb.ON;
+        }
+        return OptionOleDb.OFF;
+    }
+
+    public void setOleDb(OptionOleDb oleDb) {
+        if (oleDb == OptionOleDb.OFF) {
+            value &= ~OPTION_OLE_DB_BIT_INDEX;
+        } else {
+            value |= OPTION_OLE_DB_BIT_INDEX;
+        }
+    }
+
+    public OptionAccessIntent getAccessIntent() {
+        if ((value & OPTION_ACCESS_INTENT_BIT_INDEX) == OPTION_ACCESS_INTENT_BIT_INDEX) {
+            return OptionAccessIntent.READ_ONLY;
+        }
+        return OptionAccessIntent.READ_WRITE;
+    }
+
+    public void setAccessIntent(OptionAccessIntent accessIntent) {
+        if (accessIntent == OptionAccessIntent.READ_WRITE) {
+            value &= ~OPTION_ACCESS_INTENT_BIT_INDEX;
+        } else {
+            value |= OPTION_ACCESS_INTENT_BIT_INDEX;
+        }
+    }
 
     @Override
     public String toString() {
-        return String.format("TypeFlags[0b%s(SqlType=%s, OleDb=%s, AccessIntent=%s)]",
-                String.format("%8s", Integer.toBinaryString(value & 0xFF)).replace(' ', '0'), getSqlType(), getOleDb(), getAccessIntent());
+        String binary = String.format("%8s", Integer.toBinaryString(value)).replace(' ', '0');
+        return "TypeFlags[0b" + binary +
+                "(SqlType=" + getSqlType() +
+                ", OleDb=" + getOleDb() +
+                ", AccessIntent=" + getAccessIntent() + ")]";
     }
 }

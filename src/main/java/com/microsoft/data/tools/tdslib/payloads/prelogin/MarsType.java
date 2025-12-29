@@ -1,19 +1,12 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
 package com.microsoft.data.tools.tdslib.payloads.prelogin;
 
 public final class MarsType {
-    public static final int Off = 0x00;
-    public static final int On = 0x01;
+    public static final byte OFF = 0x00;
+    public static final byte ON = 0x01;
 
-    private MarsType() {}
-
-    public static String getString(int type) {
-        switch (type) {
-            case Off: return "Off";
-            case On: return "On";
-            default: return "Unknown";
-        }
+    public static String getString(byte type) {
+        if (type == OFF) return "Off";
+        if (type == ON) return "On";
+        return "Unknown";
     }
 }

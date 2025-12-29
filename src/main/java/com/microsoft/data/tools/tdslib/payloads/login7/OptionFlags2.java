@@ -1,57 +1,166 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
 package com.microsoft.data.tools.tdslib.payloads.login7;
 
+/**
+ * Option flags 2.
+ * Handles bit-masking for initialization and security settings.
+ */
 public final class OptionFlags2 {
-    public enum OptionInitLang { Warn, Fatal }
-    public enum OptionOdbc { Off, On }
-    public enum OptionUser { Normal, Server, RemUser, SqlRepl }
-    public enum OptionIntegratedSecurity { Off, On }
 
-    private static final int OptionInitLangBitIndex = 0x01;
-    private static final int OptionOdbcBitIndex = 0x02;
-    private static final int OptionUserBitIndexServer = 0x10;
-    private static final int OptionUserBitIndexRemUser = 0x20;
-    private static final int OptionUserBitIndexSqlRepl = 0x40;
-    private static final int OptionIntegratedSecurityBitIndex = 0x80;
+    // Bit Masks
+    private static final int OPTION_INIT_LANG_BIT_INDEX = 0x01;
+    private static final int OPTION_ODBC_BIT_INDEX = 0x02;
+    // Bits 0x04 and 0x08 are reserved/unused in this spec
+    private static final int OPTION_USER_BIT_INDEX_SERVER = 0x10;
+    private static final int OPTION_USER_BIT_INDEX_REM_USER = 0x20;
+    private static final int OPTION_USER_BIT_INDEX_SQL_REPL = 0x40;
+    private static final int OPTION_INTEGRATED_SECURITY_BIT_INDEX = 0x80;
 
-    private byte value;
+    // Use int internally to avoid signed byte issues
+    private int value;
 
-    public OptionFlags2(byte value) { this.value = value; }
-    public OptionFlags2() { setInitLang(OptionInitLang.Warn); setODBC(OptionOdbc.Off); setUser(OptionUser.Normal); setIntegratedSecurity(OptionIntegratedSecurity.Off); }
+    // --- Enums ---
 
-    public byte getValue() { return value; }
+    public enum OptionInitLang {
+        WARN,
+        FATAL
+    }
 
-    public OptionInitLang getInitLang() { return (value & OptionInitLangBitIndex) == OptionInitLangBitIndex ? OptionInitLang.Fatal : OptionInitLang.Warn; }
-    public void setInitLang(OptionInitLang v) { if (v == OptionInitLang.Warn) value &= (byte)(255 - OptionInitLangBitIndex); else value |= OptionInitLangBitIndex; }
+    public enum OptionOdbc {
+        OFF,
+        ON
+    }
 
-    public OptionOdbc getODBC() { return (value & OptionOdbcBitIndex) == OptionOdbcBitIndex ? OptionOdbc.On : OptionOdbc.Off; }
-    public void setODBC(OptionOdbc v) { if (v == OptionOdbc.Off) value &= (byte)(255 - OptionOdbcBitIndex); else value |= OptionOdbcBitIndex; }
+    public enum OptionUser {
+        NORMAL,
+        SERVER,
+        REM_USER,
+        SQL_REPL
+    }
+
+    public enum OptionIntegratedSecurity {
+        OFF,
+        ON
+    }
+
+    // --- Constructors ---
+
+    /**
+     * Create a new instance with default values.
+     */
+    public OptionFlags2() {
+        this.value = 0;
+        setInitLang(OptionInitLang.WARN);
+        setOdbc(OptionOdbc.OFF);
+        setUser(OptionUser.NORMAL);
+        setIntegratedSecurity(OptionIntegratedSecurity.OFF);
+    }
+
+    /**
+     * Create a new instance from a raw byte value.
+     */
+    public OptionFlags2(byte value) {
+        this.value = value & 0xFF;
+    }
+
+    // --- Properties ---
+
+    public byte getValue() {
+        return (byte) value;
+    }
+
+    public byte byteValue() {
+        return (byte) value;
+    }
+
+    public OptionInitLang getInitLang() {
+        if ((value & OPTION_INIT_LANG_BIT_INDEX) == OPTION_INIT_LANG_BIT_INDEX) {
+            return OptionInitLang.FATAL;
+        }
+        return OptionInitLang.WARN;
+    }
+
+    public void setInitLang(OptionInitLang initLang) {
+        if (initLang == OptionInitLang.WARN) {
+            value &= ~OPTION_INIT_LANG_BIT_INDEX;
+        } else {
+            value |= OPTION_INIT_LANG_BIT_INDEX;
+        }
+    }
+
+    public OptionOdbc getOdbc() {
+        if ((value & OPTION_ODBC_BIT_INDEX) == OPTION_ODBC_BIT_INDEX) {
+            return OptionOdbc.ON;
+        }
+        return OptionOdbc.OFF;
+    }
+
+    public void setOdbc(OptionOdbc odbc) {
+        // FIXED: The C# source had a bug here using OptionInitLangBitIndex
+        if (odbc == OptionOdbc.OFF) {
+            value &= ~OPTION_ODBC_BIT_INDEX;
+        } else {
+            value |= OPTION_ODBC_BIT_INDEX;
+        }
+    }
 
     public OptionUser getUser() {
-        if ((value & OptionUserBitIndexServer) == OptionUserBitIndexServer) return OptionUser.Server;
-        if ((value & OptionUserBitIndexRemUser) == OptionUserBitIndexRemUser) return OptionUser.RemUser;
-        if ((value & OptionUserBitIndexSqlRepl) == OptionUserBitIndexSqlRepl) return OptionUser.SqlRepl;
-        return OptionUser.Normal;
+        if ((value & OPTION_USER_BIT_INDEX_SERVER) == OPTION_USER_BIT_INDEX_SERVER) {
+            return OptionUser.SERVER;
+        }
+        if ((value & OPTION_USER_BIT_INDEX_REM_USER) == OPTION_USER_BIT_INDEX_REM_USER) {
+            return OptionUser.REM_USER;
+        }
+        if ((value & OPTION_USER_BIT_INDEX_SQL_REPL) == OPTION_USER_BIT_INDEX_SQL_REPL) {
+            return OptionUser.SQL_REPL;
+        }
+        return OptionUser.NORMAL;
     }
-    public void setUser(OptionUser v) {
-        if (v == OptionUser.Normal) { value &= (byte)(255 - OptionUserBitIndexServer); value &= (byte)(255 - OptionUserBitIndexRemUser); value &= (byte)(255 - OptionUserBitIndexSqlRepl); }
-        else if (v == OptionUser.Server) { value |= OptionUserBitIndexServer; value &= (byte)(255 - OptionUserBitIndexRemUser); value &= (byte)(255 - OptionUserBitIndexSqlRepl); }
-        else if (v == OptionUser.RemUser) { value &= (byte)(255 - OptionUserBitIndexServer); value |= OptionUserBitIndexRemUser; value &= (byte)(255 - OptionUserBitIndexSqlRepl); }
-        else { value &= (byte)(255 - OptionUserBitIndexServer); value &= (byte)(255 - OptionUserBitIndexRemUser); value |= OptionUserBitIndexSqlRepl; }
+
+    public void setUser(OptionUser user) {
+        // Clear all User bits first
+        value &= ~OPTION_USER_BIT_INDEX_SERVER;
+        value &= ~OPTION_USER_BIT_INDEX_REM_USER;
+        value &= ~OPTION_USER_BIT_INDEX_SQL_REPL;
+
+        switch (user) {
+            case SERVER:
+                value |= OPTION_USER_BIT_INDEX_SERVER;
+                break;
+            case REM_USER:
+                value |= OPTION_USER_BIT_INDEX_REM_USER;
+                break;
+            case SQL_REPL:
+                value |= OPTION_USER_BIT_INDEX_SQL_REPL;
+                break;
+            case NORMAL:
+            default:
+                // Already cleared
+                break;
+        }
     }
 
-    public OptionIntegratedSecurity getIntegratedSecurity() { return (value & OptionIntegratedSecurityBitIndex) == OptionIntegratedSecurityBitIndex ? OptionIntegratedSecurity.On : OptionIntegratedSecurity.Off; }
-    public void setIntegratedSecurity(OptionIntegratedSecurity v) { if (v == OptionIntegratedSecurity.Off) value &= (byte)(255 - OptionIntegratedSecurityBitIndex); else value |= OptionIntegratedSecurityBitIndex; }
+    public OptionIntegratedSecurity getIntegratedSecurity() {
+        if ((value & OPTION_INTEGRATED_SECURITY_BIT_INDEX) == OPTION_INTEGRATED_SECURITY_BIT_INDEX) {
+            return OptionIntegratedSecurity.ON;
+        }
+        return OptionIntegratedSecurity.OFF;
+    }
 
-    public byte toByte() { return value; }
-
-    public static OptionFlags2 fromByte(byte b) { return new OptionFlags2(b); }
+    public void setIntegratedSecurity(OptionIntegratedSecurity integratedSecurity) {
+        if (integratedSecurity == OptionIntegratedSecurity.OFF) {
+            value &= ~OPTION_INTEGRATED_SECURITY_BIT_INDEX;
+        } else {
+            value |= OPTION_INTEGRATED_SECURITY_BIT_INDEX;
+        }
+    }
 
     @Override
     public String toString() {
-        return String.format("OptionFlags2[0b%s(InitLang=%s, ODBC=%s, User=%s, IntegratedSecurity=%s)]",
-                String.format("%8s", Integer.toBinaryString(value & 0xFF)).replace(' ', '0'), getInitLang(), getODBC(), getUser(), getIntegratedSecurity());
+        String binary = String.format("%8s", Integer.toBinaryString(value)).replace(' ', '0');
+        return "OptionFlags2[0b" + binary +
+                "(InitLang=" + getInitLang() +
+                ", ODBC=" + getOdbc() +
+                ", User=" + getUser() +
+                ", IntegratedSecurity=" + getIntegratedSecurity() + ")]";
     }
 }
