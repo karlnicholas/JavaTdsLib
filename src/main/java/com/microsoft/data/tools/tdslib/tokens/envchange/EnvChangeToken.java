@@ -4,38 +4,18 @@ import com.microsoft.data.tools.tdslib.tokens.Token;
 import com.microsoft.data.tools.tdslib.tokens.TokenType;
 
 /**
- * Environment change token.
- *
+ * Environment change token interface.
  * @param <T> Type of value.
  */
-public abstract class EnvChangeToken<T> extends Token {
+public interface EnvChangeToken<T> extends Token {
 
-    private final T oldValue;
-    private final T newValue;
+    EnvChangeTokenSubType getSubType(); // We implement this manually, so "get" is fine
 
-    protected EnvChangeToken(T oldValue, T newValue) {
-        this.oldValue = oldValue;
-        this.newValue = newValue;
-    }
+    T oldValue(); // Matches Record accessor
+    T newValue(); // Matches Record accessor
 
     @Override
-    public TokenType getType() {
+    default TokenType getType() {
         return TokenType.ENV_CHANGE;
-    }
-
-    public abstract EnvChangeTokenSubType getSubType();
-
-    public T getOldValue() {
-        return oldValue;
-    }
-
-    public T getNewValue() {
-        return newValue;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("EnvChangeToken[SubType=%s, NewValue=%s, OldValue=%s]",
-                getSubType(), newValue, oldValue);
     }
 }

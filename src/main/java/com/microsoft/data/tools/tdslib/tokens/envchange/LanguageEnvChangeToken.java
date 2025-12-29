@@ -1,6 +1,5 @@
 package com.microsoft.data.tools.tdslib.tokens.envchange;
 
-public final class LanguageEnvChangeToken extends EnvChangeToken<String> {
-    public LanguageEnvChangeToken(String oldValue, String newValue) { super(oldValue, newValue); }
+public record LanguageEnvChangeToken(String oldValue, String newValue) implements EnvChangeToken<String> {
     @Override public EnvChangeTokenSubType getSubType() { return EnvChangeTokenSubType.LANGUAGE; }
 }

@@ -2,7 +2,6 @@ package com.microsoft.data.tools.tdslib.tokens.envchange;
 
 import java.nio.ByteBuffer;
 
-public final class RollbackTransactionEnvChangeToken extends EnvChangeToken<ByteBuffer> {
-    public RollbackTransactionEnvChangeToken(ByteBuffer oldValue, ByteBuffer newValue) { super(oldValue, newValue); }
+public record RollbackTransactionEnvChangeToken(ByteBuffer oldValue, ByteBuffer newValue) implements EnvChangeToken<ByteBuffer> {
     @Override public EnvChangeTokenSubType getSubType() { return EnvChangeTokenSubType.ROLLBACK_TRANSACTION; }
 }

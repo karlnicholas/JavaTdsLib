@@ -10,23 +10,25 @@ import java.io.IOException;
 public final class FeatureExtAckTokenParser implements TokenParser {
 
     @Override
-    public Token parse(TokenType tokenType, TokenStreamHandler h) throws IOException {
-        // Read Feature ID (1 byte)
-        int byteFeatureId = h.readUInt8();
+    public Token parse(TokenType tokenType, TokenStreamHandler tokenStreamHandler) throws IOException {
+        // Read FeatureId (1 byte)
+        int byteFeatureId = tokenStreamHandler.readUInt8();
 
         FeatureId featureId = FeatureId.fromValue(byteFeatureId);
+
         if (featureId == null) {
-            throw new IOException("Invalid FeatureId: " + Integer.toHexString(byteFeatureId));
+            throw new IOException(String.format("Invalid FeatureId: 0x%02X", byteFeatureId));
         }
 
+        // If Terminator, no data follows
         if (featureId == FeatureId.TERMINATOR) {
             return new FeatureExtAckToken(featureId);
         }
 
-        // Read Data Length (4 bytes)
-        long dataLength = h.readUInt32LE();
+        // Read Data Length (4 bytes, unsigned)
+        long dataLength = tokenStreamHandler.readUInt32LE();
 
-        // Read Data
-        return new FeatureExtAckToken(featureId, h.readBuffer((int) dataLength));
+        // Read Buffer
+        return new FeatureExtAckToken(featureId, tokenStreamHandler.readBuffer((int) dataLength));
     }
 }

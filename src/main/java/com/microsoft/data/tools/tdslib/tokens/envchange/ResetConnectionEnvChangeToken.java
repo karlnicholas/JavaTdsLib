@@ -2,7 +2,6 @@ package com.microsoft.data.tools.tdslib.tokens.envchange;
 
 import java.nio.ByteBuffer;
 
-public final class ResetConnectionEnvChangeToken extends EnvChangeToken<ByteBuffer> {
-    public ResetConnectionEnvChangeToken(ByteBuffer oldValue, ByteBuffer newValue) { super(oldValue, newValue); }
+public record ResetConnectionEnvChangeToken(ByteBuffer oldValue, ByteBuffer newValue) implements EnvChangeToken<ByteBuffer> {
     @Override public EnvChangeTokenSubType getSubType() { return EnvChangeTokenSubType.RESET_CONNECTION; }
 }

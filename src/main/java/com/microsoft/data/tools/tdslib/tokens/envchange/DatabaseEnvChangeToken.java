@@ -1,7 +1,5 @@
 package com.microsoft.data.tools.tdslib.tokens.envchange;
 
-public final class DatabaseEnvChangeToken extends EnvChangeToken<String> {
-    public DatabaseEnvChangeToken(String oldValue, String newValue) { super(oldValue, newValue); }
+public record DatabaseEnvChangeToken(String oldValue, String newValue) implements EnvChangeToken<String> {
     @Override public EnvChangeTokenSubType getSubType() { return EnvChangeTokenSubType.DATABASE; }
 }
-

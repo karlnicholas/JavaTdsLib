@@ -18,17 +18,8 @@ public final class TcpConnection implements TdsConnection {
     private final SocketChannel socketChannel;
     private final TcpServerEndpoint endpoint;
     private final TcpConnectionOptions options;
-
-    // Internal buffer to avoid re-allocating on every receive
     private final ByteBuffer internalReadBuffer;
 
-    /**
-     * Creates a Tcp Connection to a SQL Server endpoint.
-     *
-     * @param options        Connection options.
-     * @param serverEndpoint SQL Server endpoint.
-     * @throws IOException If a problem occurs while setting up the socket.
-     */
     public TcpConnection(TcpConnectionOptions options, TcpServerEndpoint serverEndpoint) throws IOException {
         if (serverEndpoint == null) throw new IllegalArgumentException("serverEndpoint cannot be null");
         if (options == null) throw new IllegalArgumentException("options cannot be null");
@@ -40,41 +31,37 @@ public final class TcpConnection implements TdsConnection {
         this.socketChannel = SocketChannel.open();
 
         // 2. Configure Options
-        // Matches C# NoDelay = true
-        this.socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
+        socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
 
-        // Receive Timeout
         if (options.getReceiveTimeout() > 0) {
-            this.socketChannel.socket().setSoTimeout(options.getReceiveTimeout());
+            socketChannel.socket().setSoTimeout(options.getReceiveTimeout());
         }
 
-        // Bind Local Endpoint if specified
         if (options.getLocalEndpoint() != null) {
-            this.socketChannel.bind(options.getLocalEndpoint());
+            socketChannel.bind(options.getLocalEndpoint());
         }
 
-        // 3. Connect
-        // We use blocking mode to match the synchronous architecture of the C# NetworkStream
-        this.socketChannel.configureBlocking(true);
+        // 3. Connect (Blocking mode to mimic C# NetworkStream behavior)
+        socketChannel.configureBlocking(true);
 
-        InetSocketAddress remoteAddress = endpoint.toInetSocketAddress();
+        var remoteAddress = endpoint.toInetSocketAddress();
 
         try {
             if (options.getConnectTimeout() > 0) {
-                this.socketChannel.socket().connect(remoteAddress, options.getConnectTimeout());
+                socketChannel.socket().connect(remoteAddress, options.getConnectTimeout());
             } else {
-                this.socketChannel.connect(remoteAddress);
+                socketChannel.connect(remoteAddress);
             }
         } catch (IOException e) {
             try {
-                this.socketChannel.close();
+                socketChannel.close();
             } catch (IOException suppressed) {
                 e.addSuppressed(suppressed);
             }
             throw e;
         }
 
-        // 4. Initialize Read Buffer
+        // 4. Initialize Buffer
         this.internalReadBuffer = ByteBuffer.allocate(options.getPacketSize());
     }
 
@@ -105,8 +92,6 @@ public final class TcpConnection implements TdsConnection {
 
     @Override
     public void sendData(ByteBuffer byteBuffer) throws IOException {
-        // Write the data to the channel
-        // Ensure we handle partial writes (though blocking mode usually handles this)
         while (byteBuffer.hasRemaining()) {
             socketChannel.write(byteBuffer);
         }
@@ -116,7 +101,6 @@ public final class TcpConnection implements TdsConnection {
     public ByteBuffer receiveData() throws IOException {
         internalReadBuffer.clear();
 
-        // Read from socket
         int bytesRead = socketChannel.read(internalReadBuffer);
 
         if (bytesRead == -1) {
@@ -124,16 +108,13 @@ public final class TcpConnection implements TdsConnection {
         }
 
         if (bytesRead == 0) {
-            // In blocking mode, 0 usually only happens on timeout or interruption.
-            // Returning empty buffer to be safe.
             return ByteBuffer.allocate(0);
         }
 
-        // Prepare buffer for reading by the caller
         internalReadBuffer.flip();
 
-        // Return a fresh copy of the data
-        ByteBuffer result = ByteBuffer.allocate(bytesRead);
+        // Return a fresh copy
+        var result = ByteBuffer.allocate(bytesRead);
         result.put(internalReadBuffer);
         result.flip();
 
@@ -142,12 +123,11 @@ public final class TcpConnection implements TdsConnection {
 
     @Override
     public void clearIncomingData() throws IOException {
-        // In blocking mode, we cannot easily peek "Available" bytes like C#.
-        // We temporarily switch to non-blocking to drain the socket.
+        // Temporarily switch to non-blocking to drain socket
         boolean wasBlocking = socketChannel.isBlocking();
         try {
             socketChannel.configureBlocking(false);
-            ByteBuffer dump = ByteBuffer.allocate(1024);
+            var dump = ByteBuffer.allocate(1024);
             while (socketChannel.read(dump) > 0) {
                 dump.clear();
             }
@@ -158,7 +138,6 @@ public final class TcpConnection implements TdsConnection {
 
     @Override
     public void startTLS() throws IOException {
-        // As discussed, this requires the PreLoginTlsChannel wrapper
         throw new UnsupportedOperationException("TLS Handshake logic requires PreLoginTlsChannel implementation.");
     }
 
